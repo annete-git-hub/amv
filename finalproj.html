@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bubbly Chat Bot</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --pink:    #ff6eb4;
+      --purple:  #a259ff;
+      --blue:    #4fc3f7;
+      --teal:    #38e8c6;
+      --yellow:  #ffe066;
+      --orange:  #ff9a3c;
+      --bg:      #f0e9ff;
+      --white:   #ffffff;
+      --gray:    #e8e0f5;
+      --text:    #3a2d5c;
+      --subtext: #8b7db5;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Nunito', sans-serif;
+      background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .chat-wrapper {
+      position: relative;
+      padding: 6px;
+      border-radius: 40px;
+      background: linear-gradient(135deg, var(--pink), var(--purple), var(--blue), var(--teal));
+      box-shadow: 0 20px 60px rgba(162,89,255,0.35), 0 0 0 8px rgba(255,255,255,0.25);
+      animation: borderPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes borderPulse {
+      0%,100% { box-shadow: 0 20px 60px rgba(162,89,255,0.35), 0 0 0 8px rgba(255,255,255,0.25); }
+      50%      { box-shadow: 0 24px 70px rgba(255,110,180,0.45), 0 0 0 12px rgba(255,255,255,0.35); }
+    }
+
+    .bubble-deco {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.55;
+      animation: floatBubble 6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .bd1 { width:28px;height:28px;background:var(--pink);   top:-14px; left:40px;  animation-delay:0s; }
+    .bd2 { width:18px;height:18px;background:var(--yellow); top:-10px; right:60px; animation-delay:1s; }
+    .bd3 { width:22px;height:22px;background:var(--teal);   bottom:-12px;left:80px;animation-delay:2s; }
+    .bd4 { width:14px;height:14px;background:var(--orange); bottom:-8px; right:40px;animation-delay:0.5s;}
+    .bd5 { width:12px;height:12px;background:var(--blue);   top:50%;     left:-10px;animation-delay:1.5s;}
+    .bd6 { width:16px;height:16px;background:var(--purple); top:40%;    right:-10px;animation-delay:3s; }
+
+    @keyframes floatBubble {
+      0%,100% { transform: translateY(0) scale(1); }
+      50%      { transform: translateY(-8px) scale(1.1); }
+    }
+
+    .chat-container {
+      width: 380px;
+      height: 640px;
+      border-radius: 36px;
+      background: var(--white);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+      padding: 18px 20px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    .header::after {
+      content:'';
+      position:absolute;
+      right:-20px; top:-20px;
+      width:100px;height:100px;
+      background:rgba(255,255,255,0.12);
+      border-radius:50%;
+    }
+    .avatar {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--yellow), var(--orange));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      flex-shrink: 0;
+      border: 3px solid rgba(255,255,255,0.5);
+    }
+    .header-info .name {
+      color: #fff;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 0.3px;
+    }
+    .header-info .status {
+      font-size: 11px;
+      color: rgba(255,255,255,0.85);
+      display: flex; align-items: center; gap: 5px;
+      margin-top: 2px;
+    }
+    .status-dot {
+      width: 8px; height: 8px;
+      background: var(--teal);
+      border-radius: 50%;
+      animation: blink 2s ease-in-out infinite;
+      box-shadow: 0 0 6px var(--teal);
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    .messages {
+      flex: 1;
+      padding: 16px 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: linear-gradient(180deg, #faf7ff 0%, #f0f8ff 100%);
+      scrollbar-width: thin;
+      scrollbar-color: var(--gray) transparent;
+    }
+    .messages::-webkit-scrollbar { width: 5px; }
+    .messages::-webkit-scrollbar-thumb { background: var(--gray); border-radius: 10px; }
+
+    .message {
+      padding: 10px 14px;
+      border-radius: 20px;
+      max-width: 75%;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text);
+      animation: popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      position: relative;
+      word-break: break-word;
+    }
+    @keyframes popIn {
+      from { opacity:0; transform: scale(0.7) translateY(10px); }
+      to   { opacity:1; transform: scale(1) translateY(0); }
+    }
+
+    .user {
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      color: #fff !important;
+      align-self: flex-end;
+      border-bottom-right-radius: 6px;
+      box-shadow: 0 4px 14px rgba(162,89,255,0.35);
+    }
+    .user .meta { color: rgba(255,255,255,0.75) !important; }
+
+    .bot {
+      background: var(--white);
+      align-self: flex-start;
+      border-bottom-left-radius: 6px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+      border: 1.5px solid var(--gray);
+    }
+
+    .meta {
+      font-size: 10px;
+      color: var(--subtext);
+      margin-top: 4px;
+      text-align: right;
+    }
+
+    .day-label {
+      text-align: center;
+      font-size: 11px;
+      color: var(--subtext);
+      font-weight: 700;
+      padding: 4px 12px;
+      background: rgba(162,89,255,0.1);
+      border-radius: 20px;
+      align-self: center;
+      margin: 4px 0;
+    }
+
+    .typing {
+      align-self: flex-start;
+      background: var(--white);
+      border: 1.5px solid var(--gray);
+      border-radius: 20px;
+      border-bottom-left-radius: 6px;
+      padding: 12px 18px;
+      display: none;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+    }
+    .typing-dots { display: flex; gap: 5px; align-items: center; }
+    .typing-dots span {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      animation: bounce 1.2s ease-in-out infinite;
+    }
+    .typing-dots span:nth-child(1){ background:var(--pink);   animation-delay:0s;   }
+    .typing-dots span:nth-child(2){ background:var(--purple); animation-delay:0.2s; }
+    .typing-dots span:nth-child(3){ background:var(--blue);   animation-delay:0.4s; }
+    @keyframes bounce {
+      0%,80%,100%{ transform:translateY(0);   }
+      40%        { transform:translateY(-8px); }
+    }
+
+    .emoji-bar {
+      padding: 8px 14px;
+      background: var(--bg);
+      display: flex;
+      gap: 6px;
+      border-top: 1.5px solid var(--gray);
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .emoji-bar::-webkit-scrollbar { display:none; }
+    .emoji {
+      cursor: pointer;
+      font-size: 20px;
+      padding: 4px 6px;
+      border-radius: 12px;
+      transition: transform 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+    .emoji:hover {
+      transform: scale(1.3);
+      background: rgba(162,89,255,0.12);
+    }
+
+    .input-area {
+      display: flex;
+      align-items: center;
+      padding: 10px 14px 14px;
+      gap: 8px;
+      background: var(--white);
+    }
+    .input-wrap {
+      flex: 1;
+      background: var(--bg);
+      border: 2px solid transparent;
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      padding: 0 14px;
+      transition: border-color 0.2s;
+    }
+    .input-wrap:focus-within {
+      border-color: var(--purple);
+      background: #fff;
+    }
+    input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 10px 0;
+      font-family: 'Nunito', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+    }
+    input::placeholder { color: var(--subtext); }
+
+    .send-btn {
+      width: 44px; height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      color: white;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 14px rgba(162,89,255,0.4);
+      flex-shrink: 0;
+    }
+    .send-btn:hover  { transform: scale(1.1); box-shadow: 0 6px 18px rgba(162,89,255,0.5); }
+    .send-btn:active { transform: scale(0.95); }
+  </style>
+</head>
+<body>
+
+<div class="chat-wrapper">
+  <div class="bubble-deco bd1"></div>
+  <div class="bubble-deco bd2"></div>
+  <div class="bubble-deco bd3"></div>
+  <div class="bubble-deco bd4"></div>
+  <div class="bubble-deco bd5"></div>
+  <div class="bubble-deco bd6"></div>
+
+  <div class="chat-container">
+    <div class="header">
+      <div class="avatar">🤖</div>
+      <div class="header-info">
+        <div class="name">Bubbly Bot ✨</div>
+        <div class="status"><span class="status-dot"></span> Online & ready to chat!</div>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="day-label">Today</div>
+    </div>
+
+    <div class="messages" id="typing-wrap" style="flex:none;padding:0 14px 6px;background:linear-gradient(180deg,#faf7ff,#f0f8ff);">
+      <div class="typing" id="typing">
+        <div class="typing-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="emoji-bar">
+      <span class="emoji">😀</span>
+      <span class="emoji">😂</span>
+      <span class="emoji">❤️</span>
+      <span class="emoji">👍</span>
+      <span class="emoji">🙏</span>
+      <span class="emoji">🎉</span>
+      <span class="emoji">😢</span>
+      <span class="emoji">🔥</span>
+      <span class="emoji">😎</span>
+      <span class="emoji">🤔</span>
+    </div>
+
+    <div class="input-area">
+      <div class="input-wrap">
+        <input type="text" id="input" placeholder="Say something nice... 💬">
+      </div>
+      <button class="send-btn" onclick="sendMessage()" title="Send">➤</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const messagesDiv = document.getElementById('messages');
+  const input       = document.getElementById('input');
+  const typing      = document.getElementById('typing');
+
+  let messages = [];
+  try {
+    const raw = sessionStorage.getItem('bubbly_chat');
+    if (raw) messages = JSON.parse(raw);
+  } catch(e) { messages = []; }
+
+  const rules = [
+    { pattern: /\b(hi|hello|hey|howdy|sup|what'?s up|good morning|good afternoon|good evening)\b/i,
+      reply: "Hello! 👋 How can I help you today?" },
+    { pattern: /\b(thank(s| you)|thx|ty|cheers)\b/i,
+      reply: "You're welcome! 😊 Always happy to help!" },
+    { pattern: /\b(congrats|congratulations|well done|great job|you did it)\b/i,
+      reply: "Thank you so much! 🎉 That means a lot!" },
+    { pattern: /\b(how are you|how r u|how'?re you|how do you do|you okay)\b/i,
+      reply: "I'm fine, thank you! 😄 How are you?" },
+    { pattern: /\b(bye|goodbye|see you|see ya|take care|cya|ttyl)\b/i,
+      reply: "Goodbye! 👋 Take care and come back soon! 💜" },
+    { pattern: /\b(i love you|love you|you're amazing|you're great|you're awesome|you rock)\b/i,
+      reply: "Aww, that's so sweet! 🥰 I appreciate you!" },
+    { pattern: /\b(i'm sad|i am sad|feeling down|not okay|not good|depressed|unhappy)\b/i,
+      reply: "Oh no, I'm sorry to hear that. 🫂 I hope things get better soon! You've got this! 💪" },
+    { pattern: /\b(tell me a joke|joke|make me laugh|something funny)\b/i,
+      replies: [
+        "Why don't scientists trust atoms? Because they make up everything! 😂",
+        "What do you call a fish without eyes? A fsh! 🐟😂",
+        "Why did the scarecrow win an award? He was outstanding in his field! 🌾😄"
+      ]},
+    { pattern: /\b(weather|raining|sunny|temperature|forecast)\b/i,
+      reply: "I wish I could check the weather for you! ☁️ Try a weather app for accurate forecasts 🌤️" },
+    { pattern: /\b(what('?s| is) your name|who are you)\b/i,
+      reply: "I'm Bubbly Bot! ✨ Your friendly little chat companion 🤖💜" },
+    { pattern: /\b(how old are you|your age)\b/i,
+      reply: "I'm timeless! ⏳ Born in the cloud, living in your browser 😄" },
+    { pattern: /\b(help|assist|support|can you help)\b/i,
+      reply: "Of course! 🙌 Just tell me what's on your mind and I'll do my best!" },
+    { pattern: /^\s*(yes|yep|yup|sure|absolutely|definitely|of course)\s*$/i,
+      reply: "Great! 🎉 I'm glad we're on the same page!" },
+    { pattern: /^\s*(no|nope|nah|never)\s*$/i,
+      reply: "No worries! 😊 Feel free to share what's on your mind." },
+    { pattern: /^\s*(good|great|fine|okay|ok|i'm good|i am good|doing well)\s*[!.]?\s*$/i,
+      reply: "Glad to hear that! 😁 Anything I can help you with today?" },
+  ];
+
+  const fallbacks = [
+    "Hmm, that's an interesting one! 🤔 I'll get back to you regarding this.",
+    "Great question! 💭 I'll look into that and get back to you.",
+    "I'm still learning! 📚 I'll get back to you regarding this.",
+    "Let me think about that one... 🧠 I'll get back to you shortly!",
+    "Ooh, that's a tough one! 🤔 I'll get back to you regarding this."
+  ];
+
+  function getBotReply(userText) {
+    for (const rule of rules) {
+      if (rule.pattern.test(userText)) {
+        if (rule.replies) return rule.replies[Math.floor(Math.random() * rule.replies.length)];
+        return rule.reply;
+      }
+    }
+    return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+  }
+
+  function renderMessages() {
+    messagesDiv.innerHTML = '<div class="day-label">Today</div>';
+    messages.forEach(msg => {
+      const div = document.createElement('div');
+      div.className = 'message ' + msg.sender;
+      div.innerHTML = `${msg.text}<div class="meta">${msg.time} ${msg.sender === 'user' ? '✔✔' : '💜'}</div>`;
+      messagesDiv.appendChild(div);
+    });
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function getTime() {
+    const now = new Date();
+    return now.getHours() + ':' + now.getMinutes().toString().padStart(2,'0');
+  }
+
+  function saveMessages() {
+    sessionStorage.setItem('bubbly_chat', JSON.stringify(messages));
+  }
+
+  function sendMessage() {
+    const text = input.value.trim();
+    if (!text) return;
+    messages.push({ text, sender: 'user', time: getTime() });
+    saveMessages();
+    input.value = '';
+    renderMessages();
+    botReply(text);
+  }
+
+  function botReply(userText) {
+    typing.style.display = 'block';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    const delay = 1000 + Math.random() * 800;
+    setTimeout(() => {
+      typing.style.display = 'none';
+      const reply = getBotReply(userText);
+      messages.push({ text: reply, sender: 'bot', time: getTime() });
+      saveMessages();
+      renderMessages();
+    }, delay);
+  }
+
+  document.querySelectorAll('.emoji').forEach(e => {
+    e.addEventListener('click', () => {
+      input.value += e.textContent;
+      input.focus();
+    });
+  });
+
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(); });
+
+  renderMessages();
+
+  if (messages.length === 0) {
+    setTimeout(() => {
+      typing.style.display = 'block';
+      setTimeout(() => {
+        typing.style.display = 'none';
+        messages.push({ text: "Hey there! 👋 I'm Bubbly Bot! ✨ Type something to get started 💜", sender: 'bot', time: getTime() });
+        saveMessages();
+        renderMessages();
+      }, 1200);
+    }, 500);
+  }
+</script>
+
+</body>
+</html>
