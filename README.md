@@ -1,4 +1,4 @@
-# Bubbly Chat Bot
+# Chat with Bubbles
 
 A lightweight, browser-based chatbot interface built with HTML, CSS, and vanilla JavaScript.
 The project focuses on delivering a polished user experience through modern UI design, smooth animations, and responsive interaction patterns.
